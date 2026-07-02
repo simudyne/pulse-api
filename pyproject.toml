@@ -47,11 +47,11 @@ version_toml = ["pyproject.toml:project.version"]
 changelog_file = "CHANGELOG.md"
 build_command = "pip install build && python -m build"
 
-# Release channels. `main` cuts stable versions (0.6.0); `dev` cuts
+# Release channels. `prod` cuts stable versions (0.6.0); `dev` cuts
 # prereleases (0.6.0-dev.1). Prerelease tags never collide with stable ones,
 # and `pip install git+...@dev` is how you pull a dev build.
-[tool.semantic_release.branches.main]
-match = "main"
+[tool.semantic_release.branches.prod]
+match = "prod"
 prerelease = false
 
 [tool.semantic_release.branches.dev]

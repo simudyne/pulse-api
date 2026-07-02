@@ -30,7 +30,7 @@ pip install git+https://github.com/simudyne/pulse-api.git@dev
 ```
 
 Only use dev builds for testing unreleased changes; they are not guaranteed
-stable. Merge `dev` into `main` to promote those changes to a stable release.
+stable. Merge `dev` into `prod` to promote those changes to a stable release.
 
 ## Quick start
 
