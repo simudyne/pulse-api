@@ -656,6 +656,14 @@ class SimulationResource:
         Returns:
             bytes: ZIP file content containing requested parquet files
 
+        Free-tier quota: bulk downloads are capped per rolling 24-hour window
+        (default 3). One unit is consumed per distinct simulation group (all
+        Monte Carlo runs of one scenario) — not per call, run, or file format,
+        and re-fetching a group already counted in the window is free. The API
+        returns HTTP 429 when a request would exceed the allowance. Check your
+        remaining quota with ``client.profile.downloads()``. Pro and demo
+        tiers are unlimited.
+
         Example - Download sim_data for multiple sims:
             >>> cached = client.simulation.list_cached(symbol="700.HK")
             >>> sim_ids = [s["example_sim_id"] for s in cached["simulations"]]
