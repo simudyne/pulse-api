@@ -1,6 +1,39 @@
 # CHANGELOG
 
 
+## v0.6.0-dev.1 (2026-07-16)
+
+### Chores
+
+- **ci**: Add manual test workflow and sync dev with prod rename
+  ([`7233349`](https://github.com/simudyne/pulse-sdk/commit/7233349592a65932a508827979d26c703b9b872f))
+
+- Add .github/workflows/test.yml with workflow_dispatch trigger running pytest - Add optional "test"
+  dependency group (pytest) to pyproject.toml - Bring dev up to date with the main->prod rename and
+  PyPI publish step
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+- **release**: Add dev prerelease channel alongside stable main
+  ([`d5b0943`](https://github.com/simudyne/pulse-sdk/commit/d5b094353afa50cc40f6df0ff1ac9bff2e13d724))
+
+- Configure semantic-release branches: main (stable) + dev (-dev.N prereleases) - Trigger release
+  workflow on pushes to dev as well as main - Document `pip install git+...@dev` dev builds in
+  README
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+### Features
+
+- **profile**: Add downloads() for the bulk-download quota endpoint
+  ([`873893c`](https://github.com/simudyne/pulse-sdk/commit/873893c6e1d724fc334ec85b4f7ac750b23b759a))
+
+- client.profile.downloads() wraps GET /profile/downloads (limit/used/remaining) - document
+  free-tier quota semantics and 429 behaviour on get_bulk_data
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+
 ## v0.5.2 (2026-06-17)
 
 ### Bug Fixes
