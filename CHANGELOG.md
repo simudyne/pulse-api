@@ -1,6 +1,29 @@
 # CHANGELOG
 
 
+## v0.6.0-dev.2 (2026-08-04)
+
+### Documentation
+
+- **sdk**: Permanent group membership semantics for the download quota
+  ([`b7c6584`](https://github.com/simudyne/pulse-sdk/commit/b7c6584854afa55e2b4d518ed47aa6b9cf0becf7))
+
+- downloads() documents downloaded_groups and new-groups-per-window counting -
+  get_sim_data/get_bulk_data note the per-file quota and free re-fetches
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+### Features
+
+- **data**: Forward catalog filters from get_available_symbols
+  ([`675d98d`](https://github.com/simudyne/pulse-sdk/commit/675d98d26e88a52a313ea1043321019946e8e5ec))
+
+- Accept optional symbol/exchange/provider/date/limit/offset and pass them as query params to GET
+  /data/available-symbols - No-argument calls behave exactly as before
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
+
 ## v0.6.0-dev.1 (2026-07-16)
 
 ### Chores
