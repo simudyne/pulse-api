@@ -1,6 +1,9 @@
 # CHANGELOG
 
 
+## v0.6.0 (2026-08-05)
+
+
 ## v0.6.0-dev.2 (2026-08-04)
 
 ### Documentation
@@ -43,6 +46,14 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
 - Configure semantic-release branches: main (stable) + dev (-dev.N prereleases) - Trigger release
   workflow on pushes to dev as well as main - Document `pip install git+...@dev` dev builds in
   README
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+- **release**: Rename stable branch main -> prod
+  ([`1e3ad4b`](https://github.com/simudyne/pulse-sdk/commit/1e3ad4bfa2744508885cc97a61b3cbd90de5b7d8))
+
+- Point semantic-release stable channel at prod (was main) - Trigger release workflow on prod
+  instead of main - Update README promote-to-stable note
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 
