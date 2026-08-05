@@ -1,6 +1,21 @@
 # CHANGELOG
 
 
+## v0.6.1 (2026-08-05)
+
+### Bug Fixes
+
+- **simulation**: Correct stale flash_crash/buy_panic scenario defaults
+  ([`af10951`](https://github.com/simudyne/pulse-sdk/commit/af1095184277f593aeadded35fac34ac8d598823))
+
+- both advertised 22.0/0.19/500ms while the engine has used 150.0/0.02/100ms since pulse 2.4.7
+  (07c176e1), so anyone sizing a scenario from get_scenario_defaults got ~7x the impact shown - note
+  the mirroring requirement against EIB/calcs/scenarios.py, whose builder signatures SimulationRun
+  backfills from
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+
 ## v0.6.0 (2026-08-05)
 
 
