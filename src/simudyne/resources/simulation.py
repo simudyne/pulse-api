@@ -32,18 +32,25 @@ SCENARIOS = {
     "trending_down": "Small steady SELL flow producing a persistent downtrend",
 }
 
-# Scenario parameter defaults
+# Scenario parameter defaults.
+#
+# MUST mirror the builder signatures in the engine's EIB/calcs/scenarios.py —
+# SimulationRun backfills any omitted key from those defaults via
+# inspect.signature, so a stale copy here misreports what a run will actually
+# do. flash_crash/buy_panic drifted once already (22.0/0.19/500ms lingered here
+# after the engine moved to 150.0/0.02/100ms), so re-check both when either side
+# changes.
 SCENARIO_DEFAULTS = {
     "flash_crash": {
-        "impact_multiplier": 22.0,
-        "order_size_ratio": 0.19,
-        "order_freq": "500ms",
+        "impact_multiplier": 150.0,
+        "order_size_ratio": 0.02,
+        "order_freq": "100ms",
         "start_time": "10:30:00",
     },
     "buy_panic": {
-        "impact_multiplier": 22.0,
-        "order_size_ratio": 0.19,
-        "order_freq": "500ms",
+        "impact_multiplier": 150.0,
+        "order_size_ratio": 0.02,
+        "order_freq": "100ms",
         "start_time": "10:30:00",
     },
     "gradual_selloff": {
@@ -397,7 +404,7 @@ class SimulationResource:
         Example:
             >>> defaults = client.simulation.get_scenario_defaults("flash_crash")
             >>> print(defaults)
-            {'impact_multiplier': 22.0, 'order_size_ratio': 0.19, ...}
+            {'impact_multiplier': 150.0, 'order_size_ratio': 0.02, ...}
         """
         return SCENARIO_DEFAULTS.get(scenario, {}).copy()
 
