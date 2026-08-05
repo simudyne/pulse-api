@@ -496,6 +496,13 @@ class SimulationResource:
         """
         Download simulation data as a Polars DataFrame.
 
+        Free-tier quota: downloading from a cached simulation group you haven't
+        downloaded before consumes one unit of the daily allowance (HTTP 429
+        once exhausted). Groups you've already downloaded — via this method,
+        the bulk ZIP, or the web explorer — stay free forever, any run or file
+        format. Your own job runs are never charged. See
+        ``client.profile.downloads()``.
+
         Args:
             sim_id: The simulation ID
             filename: File to download. Options:
@@ -655,6 +662,14 @@ class SimulationResource:
 
         Returns:
             bytes: ZIP file content containing requested parquet files
+
+        Free-tier quota: at most N NEW simulation groups per rolling 24-hour
+        window (default 3). One unit is consumed per distinct group (all Monte
+        Carlo runs of one scenario) — not per call, run, or file format — and
+        membership is permanent: a group you've downloaded before is free to
+        re-fetch forever. The API returns HTTP 429 (charging nothing) when a
+        request would exceed the allowance. Check your quota and owned groups
+        with ``client.profile.downloads()``. Pro and demo tiers are unlimited.
 
         Example - Download sim_data for multiple sims:
             >>> cached = client.simulation.list_cached(symbol="700.HK")

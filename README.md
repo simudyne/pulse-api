@@ -5,28 +5,29 @@ Python client for the [Pulse](https://pulse.simudyne.com) synthetic market data 
 ## Installation
 
 ```bash
-pip install git+https://github.com/simudyne/pulse-api.git
+pip install simudyne-pulse
 ```
 
-Or from a specific release:
+The distribution is named `simudyne-pulse`; the import name is `simudyne`:
 
-```bash
-pip install simudyne@https://github.com/simudyne/pulse-api/releases/download/v0.1.0/simudyne-0.1.0-py3-none-any.whl
+```python
+from simudyne import PulseABM
 ```
 
 Requires Python 3.10+.
 
 ### Development builds
 
-The `dev` branch is a prerelease channel. Pushes to it cut prerelease versions
-(e.g. `0.6.0-dev.1`) that are separate from the stable versions on `main` — the
-`-dev.N` suffix keeps the two from ever colliding. Stable installs above are
-unaffected by anything on `dev`.
+The `dev` branch is a prerelease channel. Pushes to it publish prerelease
+versions (e.g. `0.6.0.dev1`) that are separate from the stable versions cut on
+`prod`. `pip install simudyne-pulse` always resolves to the latest **stable**
+release and ignores prereleases, so dev builds can never affect a normal
+install.
 
-To install the latest dev build:
+To install the latest dev build, opt in with `--pre`:
 
 ```bash
-pip install git+https://github.com/simudyne/pulse-api.git@dev
+pip install --pre simudyne-pulse
 ```
 
 Only use dev builds for testing unreleased changes; they are not guaranteed

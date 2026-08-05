@@ -13,6 +13,7 @@ concurrency:
 permissions:
   contents: write
   issues: write
+  id-token: write   # required for PyPI Trusted Publishing (OIDC)
 
 jobs:
   release:
@@ -31,6 +32,15 @@ jobs:
         run: pip install python-semantic-release
 
       - name: Run semantic-release
+        id: release
         uses: python-semantic-release/python-semantic-release@v9
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Only publishes when semantic-release actually cut a new version.
+      # prod -> stable (0.6.0); dev -> prerelease (0.6.0.dev1, skipped by
+      # `pip install` unless `--pre` is passed). No API token: PyPI trusts
+      # this repo+workflow via OIDC (see Trusted Publisher setup in README).
+      - name: Publish to PyPI
+        if: steps.release.outputs.released == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
