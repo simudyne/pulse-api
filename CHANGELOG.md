@@ -1,6 +1,21 @@
 # CHANGELOG
 
 
+## v0.7.0 (2026-08-18)
+
+### Features
+
+- **validation**: Let the tier pick which validation passes run
+  ([`a710031`](https://github.com/simudyne/pulse-sdk/commit/a7100314be2e03dc3a0105ac9c217dc89e3dd50a))
+
+- Default run_metrics/run_impact/run_fid to None and omit them from the payload when unset, so the
+  API applies the caller's tier default instead of an SDK-side False that opts demo accounts out of
+  their extra results - Add run_stylised_facts, which the API accepted but the SDK never exposed -
+  Document the demo-only result fields on get_job()
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+
 ## v0.6.1 (2026-08-05)
 
 ### Bug Fixes
