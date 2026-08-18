@@ -30,13 +30,13 @@ class ValidationResource:
         date: str,
         sim_ids: list[str],
         ticksize: float = 1.0,
-        run_metrics: bool | None = None,
-        run_impact: bool | None = None,
-        run_fid: bool | None = None,
-        run_stylised_facts: bool | None = None,
+        run_metrics: bool = True,
+        run_impact: bool = False,
+        run_fid: bool = False,
         n_levels: int = 10,
         rescale_volumes: bool = True,
         lot_size: int = 1,
+        run_stylised_facts: bool | None = None,
     ) -> dict:
         """Submit a validation job.
 
@@ -52,15 +52,13 @@ class ValidationResource:
             date: Calibration date in YYYY-MM-DD format (e.g. "2025-09-01")
             sim_ids: List of simulation IDs to validate (max 25)
             ticksize: Tick size for the symbol
-            run_metrics: Compute L1/Wasserstein distributional distances.
-                Leave unset to use your tier's default.
-            run_impact: Compute impact response curves. Leave unset to use your
-                tier's default.
-            run_fid: Compute Frechet Inception Distance. Leave unset to use your
-                tier's default.
+            run_metrics: Compute L1/Wasserstein distributional distances
+            run_impact: Compute impact response curves
+            run_fid: Compute Frechet Inception Distance
             run_stylised_facts: Compute stylised facts (autocorrelation, heavy
-                tails, volatility clustering). Leave unset to use your tier's
-                default.
+                tails, volatility clustering). Left unset it is omitted from the
+                request, so the API applies your tier's default — demo accounts
+                get them, pro accounts do not.
             n_levels: Number of L2 book levels to use
             rescale_volumes: Multiply simulated L2 size columns by lot_size
             lot_size: Lot size multiplier for volume rescaling
@@ -68,23 +66,20 @@ class ValidationResource:
         Returns:
             dict with job_id, status, message
         """
-        # A run_* flag left unset is omitted so the API applies your tier's
-        # default rather than an SDK-side one. Sending False for the optional
-        # passes would silently opt demo accounts out of the extra results that
-        # tier is meant to return by default.
+        # run_metrics/run_impact/run_fid keep sending their long-standing values
+        # so existing callers see no change. run_stylised_facts is omitted when
+        # unset, letting the API apply the tier default; sending False would opt
+        # demo accounts out of results that tier is meant to return.
         config = {
+            "run_metrics": run_metrics,
+            "run_impact": run_impact,
+            "run_fid": run_fid,
             "n_levels": n_levels,
             "rescale_volumes": rescale_volumes,
             "lot_size": lot_size,
         }
-        for flag, value in (
-            ("run_metrics", run_metrics),
-            ("run_impact", run_impact),
-            ("run_fid", run_fid),
-            ("run_stylised_facts", run_stylised_facts),
-        ):
-            if value is not None:
-                config[flag] = value
+        if run_stylised_facts is not None:
+            config["run_stylised_facts"] = run_stylised_facts
 
         payload = {
             "symbol": symbol,
@@ -136,15 +131,15 @@ class ValidationResource:
         date: str,
         sim_ids: list[str],
         ticksize: float = 1.0,
-        run_metrics: bool | None = None,
-        run_impact: bool | None = None,
-        run_fid: bool | None = None,
-        run_stylised_facts: bool | None = None,
+        run_metrics: bool = True,
+        run_impact: bool = False,
+        run_fid: bool = False,
         n_levels: int = 10,
         rescale_volumes: bool = True,
         lot_size: int = 1,
         poll_interval: float = 3.0,
         timeout: float = 600.0,
+        run_stylised_facts: bool | None = None,
     ) -> dict:
         """Submit a validation job and block until it completes.
 
@@ -156,15 +151,13 @@ class ValidationResource:
             date: Calibration date in YYYY-MM-DD format
             sim_ids: List of simulation IDs to validate (max 25)
             ticksize: Tick size for the symbol
-            run_metrics: Compute L1/Wasserstein distributional distances.
-                Leave unset to use your tier's default.
-            run_impact: Compute impact response curves. Leave unset to use your
-                tier's default.
-            run_fid: Compute Frechet Inception Distance. Leave unset to use your
-                tier's default.
+            run_metrics: Compute L1/Wasserstein distributional distances
+            run_impact: Compute impact response curves
+            run_fid: Compute Frechet Inception Distance
             run_stylised_facts: Compute stylised facts (autocorrelation, heavy
-                tails, volatility clustering). Leave unset to use your tier's
-                default.
+                tails, volatility clustering). Left unset it is omitted from the
+                request, so the API applies your tier's default — demo accounts
+                get them, pro accounts do not.
             n_levels: Number of L2 book levels to use
             rescale_volumes: Multiply simulated L2 size columns by lot_size
             lot_size: Lot size multiplier for volume rescaling
