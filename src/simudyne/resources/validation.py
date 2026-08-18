@@ -30,9 +30,10 @@ class ValidationResource:
         date: str,
         sim_ids: list[str],
         ticksize: float = 1.0,
-        run_metrics: bool = True,
-        run_impact: bool = False,
-        run_fid: bool = False,
+        run_metrics: bool | None = None,
+        run_impact: bool | None = None,
+        run_fid: bool | None = None,
+        run_stylised_facts: bool | None = None,
         n_levels: int = 10,
         rescale_volumes: bool = True,
         lot_size: int = 1,
@@ -51,9 +52,15 @@ class ValidationResource:
             date: Calibration date in YYYY-MM-DD format (e.g. "2025-09-01")
             sim_ids: List of simulation IDs to validate (max 25)
             ticksize: Tick size for the symbol
-            run_metrics: Compute L1/Wasserstein distributional distances
-            run_impact: Compute impact response curves
-            run_fid: Compute Frechet Inception Distance
+            run_metrics: Compute L1/Wasserstein distributional distances.
+                Leave unset to use your tier's default.
+            run_impact: Compute impact response curves. Leave unset to use your
+                tier's default.
+            run_fid: Compute Frechet Inception Distance. Leave unset to use your
+                tier's default.
+            run_stylised_facts: Compute stylised facts (autocorrelation, heavy
+                tails, volatility clustering). Leave unset to use your tier's
+                default.
             n_levels: Number of L2 book levels to use
             rescale_volumes: Multiply simulated L2 size columns by lot_size
             lot_size: Lot size multiplier for volume rescaling
@@ -61,19 +68,30 @@ class ValidationResource:
         Returns:
             dict with job_id, status, message
         """
+        # A run_* flag left unset is omitted so the API applies your tier's
+        # default rather than an SDK-side one. Sending False for the optional
+        # passes would silently opt demo accounts out of the extra results that
+        # tier is meant to return by default.
+        config = {
+            "n_levels": n_levels,
+            "rescale_volumes": rescale_volumes,
+            "lot_size": lot_size,
+        }
+        for flag, value in (
+            ("run_metrics", run_metrics),
+            ("run_impact", run_impact),
+            ("run_fid", run_fid),
+            ("run_stylised_facts", run_stylised_facts),
+        ):
+            if value is not None:
+                config[flag] = value
+
         payload = {
             "symbol": symbol,
             "date": date,
             "sim_ids": sim_ids,
             "ticksize": ticksize,
-            "config": {
-                "run_metrics": run_metrics,
-                "run_impact": run_impact,
-                "run_fid": run_fid,
-                "n_levels": n_levels,
-                "rescale_volumes": rescale_volumes,
-                "lot_size": lot_size,
-            },
+            "config": config,
         }
         return self._client._request("POST", RUN_PATH, json=payload)
 
@@ -87,10 +105,17 @@ class ValidationResource:
             dict with:
             - status: "pending", "running", "completed", or "failed"
             - distances: dict of {metric: {l1: [...], w: [...]}} (when completed)
-            - fid_scores: list of floats (when completed and run_fid=True)
-            - plots: list of {name, content_base64} (when completed)
-            - metadata: dict with run parameters
+            - metadata: dict with run parameters, including which passes ran
             - error: error message (when failed)
+
+            Demo-tier accounts additionally receive the numbers derived from the
+            historical data, which are withheld at the pro tier:
+
+            - distributions: per-metric historical vs simulated histograms
+            - impact_response: impact response curves as numbers, historical and
+              one block per sim run
+            - stylised_facts: historical and one block per sim run
+            - fid_scores: one score per sim run (None where not computable)
         """
         return self._client._request("GET", f"{JOBS_PATH}/{job_id}")
 
@@ -111,9 +136,10 @@ class ValidationResource:
         date: str,
         sim_ids: list[str],
         ticksize: float = 1.0,
-        run_metrics: bool = True,
-        run_impact: bool = False,
-        run_fid: bool = False,
+        run_metrics: bool | None = None,
+        run_impact: bool | None = None,
+        run_fid: bool | None = None,
+        run_stylised_facts: bool | None = None,
         n_levels: int = 10,
         rescale_volumes: bool = True,
         lot_size: int = 1,
@@ -130,9 +156,15 @@ class ValidationResource:
             date: Calibration date in YYYY-MM-DD format
             sim_ids: List of simulation IDs to validate (max 25)
             ticksize: Tick size for the symbol
-            run_metrics: Compute L1/Wasserstein distributional distances
-            run_impact: Compute impact response curves
-            run_fid: Compute Frechet Inception Distance
+            run_metrics: Compute L1/Wasserstein distributional distances.
+                Leave unset to use your tier's default.
+            run_impact: Compute impact response curves. Leave unset to use your
+                tier's default.
+            run_fid: Compute Frechet Inception Distance. Leave unset to use your
+                tier's default.
+            run_stylised_facts: Compute stylised facts (autocorrelation, heavy
+                tails, volatility clustering). Leave unset to use your tier's
+                default.
             n_levels: Number of L2 book levels to use
             rescale_volumes: Multiply simulated L2 size columns by lot_size
             lot_size: Lot size multiplier for volume rescaling
@@ -156,6 +188,7 @@ class ValidationResource:
             run_metrics=run_metrics,
             run_impact=run_impact,
             run_fid=run_fid,
+            run_stylised_facts=run_stylised_facts,
             n_levels=n_levels,
             rescale_volumes=rescale_volumes,
             lot_size=lot_size,
