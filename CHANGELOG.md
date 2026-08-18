@@ -1,6 +1,26 @@
 # CHANGELOG
 
 
+## v0.7.1 (2026-08-18)
+
+### Bug Fixes
+
+- **validation**: Restore the pre-0.7.0 run flag defaults
+  ([`7eb73fe`](https://github.com/simudyne/pulse-sdk/commit/7eb73fec5a90868e0facd977d7cfa02e916f0303))
+
+0.7.0 made run_metrics/run_impact/run_fid tri-state and omitted them when unset, which changed
+  behaviour for existing callers: the API's non-demo default for run_impact is True, so a pro user
+  passing no flags started paying for the impact pass that this SDK had always defaulted off. It
+  also inserted a parameter mid-signature, shifting positional arguments.
+
+- Send run_metrics/run_impact/run_fid explicitly again, with their original defaults, so any 0.6.x
+  caller behaves identically - Keep run_stylised_facts as the one addition, appended last in both
+  run() and run_pipeline() so no positional argument moves; omitted when unset so demo accounts
+  still get stylised facts from the tier default
+
+Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+
 ## v0.7.0 (2026-08-18)
 
 ### Features

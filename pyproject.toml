@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "simudyne-pulse"
-version = "0.7.0"
+version = "0.7.1"
 description = "Python SDK for the Simudyne Pulse synthetic market data API"
 readme = "README.md"
 license = "MIT"
