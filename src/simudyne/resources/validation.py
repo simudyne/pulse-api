@@ -27,9 +27,8 @@ pass, or ``True`` to force one on.
 ``run_inception_distances`` is the exception: it defaults to ``True``, so MIND
 and FID are computed unless you opt out. It maps to the API's ``run_fid``
 config field, which gates both metrics because they share one DeepLOB
-embedding pass. Note the scores are returned to the demo tier only — on any
-other tier a ``True`` here spends the embedding pass and the response withholds
-the numbers, so pass ``False`` if that is your situation.
+embedding pass. As of pulse-api-pod 1.56.0 the scores are returned to every
+validation tier; on older API deployments they reach the demo tier only.
 """
 
 import base64
@@ -93,8 +92,8 @@ class ValidationResource:
             run_inception_distances: Compute MIND *and* FID on DeepLOB
                 embeddings (default True). One flag gates both — they share a
                 single embedding pass. Sent as the API's ``run_fid`` field.
-                The scores reach the demo tier only, so on another tier this
-                spends the pass and the response withholds the numbers.
+                Scores are returned to every validation tier (API >= 1.56.0;
+                demo-only before that).
             run_stylised_facts: Compute the 11 Cont stylised facts
                 (None = tier default)
             plot_data: Store the raw data behind every plot — distribution
@@ -155,7 +154,8 @@ class ValidationResource:
             - stylised_fact_verdicts: {fact: {historical: bool | None,
               simulated: [bool | None, ...]}} — every entitled tier
             - mind_scores: one Monge Inception Distance per sim run, in sim_ids
-              order; None where a run could not be embedded. Demo tier only
+              order; None where a run could not be embedded. Every validation
+              tier (API >= 1.56.0)
             - fid_scores: one Frechet Inception Distance per sim run, same
               ordering and tier rule. Since pulse-check 1.8.0 this is the
               embedding-space FID — not comparable with values stored by older
@@ -314,8 +314,9 @@ class ValidationResource:
         Raises:
             RuntimeError: If the job fails, or if the scores come back empty —
                 which means the pipeline skipped them (missing torch, fewer
-                than 10 levels, unreachable checkpoint) or the key is not on
-                the demo tier, both of which are silent in the raw response.
+                than 10 levels, unreachable checkpoint), or the API predates
+                1.56.0 and the key is not demo tier; both are silent in the
+                raw response.
 
         Interpreting the scores:
             Lower = closer to the historical day, but neither number means
@@ -346,8 +347,8 @@ class ValidationResource:
             raise RuntimeError(
                 "no inception distances in the response. Either the pipeline "
                 "skipped them (torch missing, fewer than 10 book levels, or "
-                "the DeepLOB checkpoint unreachable) or this API key is not on "
-                "the demo tier, which is the only tier they are shared with."
+                "the DeepLOB checkpoint unreachable), or the API predates "
+                "1.56.0 and this key is not demo tier."
             )
 
         return {
