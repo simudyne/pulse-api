@@ -1,6 +1,45 @@
 # CHANGELOG
 
 
+## v0.7.0-dev.1 (2026-08-19)
+
+### Chores
+
+- **validation**: Take prod's validation.py (run_stylised_facts tri-state)
+  ([`d83e31b`](https://github.com/simudyne/pulse-sdk/commit/d83e31b8eac4e1d2898ca276554513c18215d424))
+
+dev is 4 commits behind prod and its validation.py lacks the run_stylised_facts tri-state added
+  there. Bringing that one file forward first so the inception-distance work below builds on it
+  instead of reverting it.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+### Features
+
+- **validation**: Mind/fid via run_inception_distances, drop dead params
+  ([`99cd8ba`](https://github.com/simudyne/pulse-sdk/commit/99cd8bad9f10b2cb8ef98a9518a4e258156ad77f))
+
+pulse-check 1.8.0 replaced the raw-feature FID with MIND and FID on DeepLOB embeddings — one
+  embedding pass computes both — and removed rescale_volumes/lot_size, since simudyne format is
+  always denominated in shares. The API (>= 1.55.1) returns mind_scores alongside fid_scores.
+
+- run_fid -> run_inception_distances, default True: the old name described one of the two metrics it
+  gates, so run_fid=False silently disabled MIND too. Still sent as the API's run_fid config field,
+  which keeps its name for existing HTTP clients. The old kwarg now raises TypeError rather than
+  being quietly ignored. - inception_distances(): one call returning {mind, fid, sim_ids, job_id},
+  forcing the other passes off so the job does a single embedding pass. Raises when the scores are
+  absent — a skipped pass and a non-demo key are both silent in the raw response. -
+  run_metrics/run_impact join run_stylised_facts and plot_data as tri-state (None = tier default,
+  omitted from the payload). Previously the SDK always sent run_impact=False, opting demo keys out
+  of a pass they are entitled to. - rescale_volumes/lot_size removed; l2_only, provider and exchange
+  added to match the API. get_job() documents mind_scores, the demo-tier rule, and that fid_scores
+  is now the embedding-space FID, not comparable with values stored by older jobs. -
+  tests/test_validation.py: 9 tests pinning the wire payload, the rename and the score handling.
+  None existed before.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+
 ## v0.6.1 (2026-08-05)
 
 ### Bug Fixes
