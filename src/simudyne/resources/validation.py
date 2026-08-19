@@ -36,6 +36,7 @@ class ValidationResource:
         n_levels: int = 10,
         rescale_volumes: bool = True,
         lot_size: int = 1,
+        run_stylised_facts: bool | None = None,
     ) -> dict:
         """Submit a validation job.
 
@@ -54,6 +55,10 @@ class ValidationResource:
             run_metrics: Compute L1/Wasserstein distributional distances
             run_impact: Compute impact response curves
             run_fid: Compute Frechet Inception Distance
+            run_stylised_facts: Compute stylised facts (autocorrelation, heavy
+                tails, volatility clustering). Left unset it is omitted from the
+                request, so the API applies your tier's default — demo accounts
+                get them, pro accounts do not.
             n_levels: Number of L2 book levels to use
             rescale_volumes: Multiply simulated L2 size columns by lot_size
             lot_size: Lot size multiplier for volume rescaling
@@ -61,19 +66,27 @@ class ValidationResource:
         Returns:
             dict with job_id, status, message
         """
+        # run_metrics/run_impact/run_fid keep sending their long-standing values
+        # so existing callers see no change. run_stylised_facts is omitted when
+        # unset, letting the API apply the tier default; sending False would opt
+        # demo accounts out of results that tier is meant to return.
+        config = {
+            "run_metrics": run_metrics,
+            "run_impact": run_impact,
+            "run_fid": run_fid,
+            "n_levels": n_levels,
+            "rescale_volumes": rescale_volumes,
+            "lot_size": lot_size,
+        }
+        if run_stylised_facts is not None:
+            config["run_stylised_facts"] = run_stylised_facts
+
         payload = {
             "symbol": symbol,
             "date": date,
             "sim_ids": sim_ids,
             "ticksize": ticksize,
-            "config": {
-                "run_metrics": run_metrics,
-                "run_impact": run_impact,
-                "run_fid": run_fid,
-                "n_levels": n_levels,
-                "rescale_volumes": rescale_volumes,
-                "lot_size": lot_size,
-            },
+            "config": config,
         }
         return self._client._request("POST", RUN_PATH, json=payload)
 
@@ -87,10 +100,17 @@ class ValidationResource:
             dict with:
             - status: "pending", "running", "completed", or "failed"
             - distances: dict of {metric: {l1: [...], w: [...]}} (when completed)
-            - fid_scores: list of floats (when completed and run_fid=True)
-            - plots: list of {name, content_base64} (when completed)
-            - metadata: dict with run parameters
+            - metadata: dict with run parameters, including which passes ran
             - error: error message (when failed)
+
+            Demo-tier accounts additionally receive the numbers derived from the
+            historical data, which are withheld at the pro tier:
+
+            - distributions: per-metric historical vs simulated histograms
+            - impact_response: impact response curves as numbers, historical and
+              one block per sim run
+            - stylised_facts: historical and one block per sim run
+            - fid_scores: one score per sim run (None where not computable)
         """
         return self._client._request("GET", f"{JOBS_PATH}/{job_id}")
 
@@ -119,6 +139,7 @@ class ValidationResource:
         lot_size: int = 1,
         poll_interval: float = 3.0,
         timeout: float = 600.0,
+        run_stylised_facts: bool | None = None,
     ) -> dict:
         """Submit a validation job and block until it completes.
 
@@ -133,6 +154,10 @@ class ValidationResource:
             run_metrics: Compute L1/Wasserstein distributional distances
             run_impact: Compute impact response curves
             run_fid: Compute Frechet Inception Distance
+            run_stylised_facts: Compute stylised facts (autocorrelation, heavy
+                tails, volatility clustering). Left unset it is omitted from the
+                request, so the API applies your tier's default — demo accounts
+                get them, pro accounts do not.
             n_levels: Number of L2 book levels to use
             rescale_volumes: Multiply simulated L2 size columns by lot_size
             lot_size: Lot size multiplier for volume rescaling
@@ -156,6 +181,7 @@ class ValidationResource:
             run_metrics=run_metrics,
             run_impact=run_impact,
             run_fid=run_fid,
+            run_stylised_facts=run_stylised_facts,
             n_levels=n_levels,
             rescale_volumes=rescale_volumes,
             lot_size=lot_size,
