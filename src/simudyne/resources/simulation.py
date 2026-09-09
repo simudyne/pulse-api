@@ -299,12 +299,15 @@ class SimulationResource:
             payload["batch_size"] = batch_size
         return self._pro_request("POST", CALIBRATE_PATH, json=payload)
 
-    def get_jobs(self):
+    def get_jobs(self, limit: int = 100):
         """
-        Get all simulation jobs submitted by the authenticated user.
+        Get simulation jobs submitted by the authenticated user, newest first.
         
         Returns a list of jobs with their associated simulation IDs. Use this
         to find job IDs for past runs or to see what simulations are pending.
+        
+        Args:
+            limit: Max jobs to return (default 100, max 500)
         
         Returns:
             dict: Contains:
@@ -313,6 +316,7 @@ class SimulationResource:
                     - sim_ids (list): List of simulation IDs in this job
                     - created_at (str): Timestamp when job was submitted
                 - total (int): Total number of jobs
+                - returned (int): Jobs in this page
                 
         Example:
             >>> result = client.simulation.get_jobs()
@@ -322,7 +326,7 @@ class SimulationResource:
             ...     print(f"Job {job['job_id']}: {len(job['sim_ids'])} simulations")
             ...     print(f"  Created: {job['created_at']}")
         """
-        return self._pro_request("GET", JOBS_PATH)
+        return self._pro_request("GET", JOBS_PATH, params={"limit": limit})
 
     def get_job_status(self, job_id: str):
         """

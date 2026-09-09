@@ -11,6 +11,7 @@ class DataResource:
         exchange: str | None = None,
         provider: str | None = None,
         date: str | None = None,
+        q: str | None = None,
         limit: int | None = None,
         offset: int | None = None,
     ):
@@ -26,6 +27,7 @@ class DataResource:
             date: Calibration date "YYYY-MM-DD". Keeps only instruments
                   calibrated on that date, and narrows each instrument's
                   available_dates to it.
+            q: Case-insensitive substring match over ticker and company name.
             limit: Max instruments to return.
             offset: Instruments to skip (for paging alongside limit).
 
@@ -38,6 +40,7 @@ class DataResource:
                 "exchange": exchange,
                 "provider": provider,
                 "date": date,
+                "q": q,
                 "limit": limit,
                 "offset": offset,
             }.items() if v is not None
