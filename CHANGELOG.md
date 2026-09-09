@@ -1,6 +1,48 @@
 # CHANGELOG
 
 
+## v0.7.0-dev.2 (2026-09-09)
+
+### Documentation
+
+- **validation**: Mind/fid reach every tier as of pulse-api-pod 1.56.0
+  ([`fb92309`](https://github.com/simudyne/pulse-sdk/commit/fb923093bad9664b77e61adb7e277b27f6bd8efe))
+
+The scores were demo-only; the API now shares them with every validation tier since they are
+  aggregate scalars. Docstrings and the empty-score error message updated to say so.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+
+### Features
+
+- Complete the documented 0.8.0 surface — fm, fix, run_upload, job logs, LRM
+  ([`2cc74ee`](https://github.com/simudyne/pulse-sdk/commit/2cc74eec77cd21a664f1e93feaa6269893bd744f))
+
+The website docs (and its docs code-block suite) describe SDK methods that did not exist yet, which
+  is what the suite's simudyne-pulse>=0.8.0 tripwire pin guards against. This adds the missing
+  surface, matching the docs pages and the pulse-api-pod routes each method wraps:
+
+- validation.run_upload(): multipart POST /validation/run/upload for frames not stored in Pulse.
+  sim_files takes paths or (filename, bytes) pairs; 1-25 enforced client-side with ValueError before
+  any bytes move; same tri-state run flags as run() via a shared _build_config(). -
+  simulation.get_job_logs(): GET /simulation/jobs/{id}/logs, returned as the plain text it is (via
+  the retrying transport, not the JSON helper). - simulation.run_lrm(): POST /simulation/lrm/run,
+  mirroring LRMRunRequest — one algo per order size over a shared baseline. - fm resource: models(),
+  available_data() (registry search with server-side filters, None params omitted), run()
+  (duration_minutes/horizon, n_runs 1-8, model_args, device, exec_algos — unset fields omitted so
+  server defaults hold), live(), job_status(), job_logs(), and TERMINAL_STATUSES = {complete,
+  failed}, which the foundation-models docs page imports. - fix resource: usage().
+
+Also refreshes validation docstrings for the impact-response tier change (pulse 2.17.0 /
+  pulse-api-pod 1.62.0): the pass runs at every tier, the simulated curves are returned everywhere,
+  the historical block stays demo/plot_data-only, and get_job() documents impact_response_error.
+
+13 new payload tests in the existing recorder style; the 10 pre-existing test_simulator_gym failures
+  locally are a missing websocket-client in the local env, unchanged by this commit.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+
 ## v0.7.0-dev.1 (2026-08-19)
 
 ### Chores
