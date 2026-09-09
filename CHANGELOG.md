@@ -1,6 +1,22 @@
 # CHANGELOG
 
 
+## v0.7.0-dev.3 (2026-09-09)
+
+### Bug Fixes
+
+- Accept the documented filter params — get_available_symbols(q), get_jobs(limit)
+  ([`7ea5010`](https://github.com/simudyne/pulse-sdk/commit/7ea5010e90c68e40956b650feb25027e5bc20ee4))
+
+The docs suite's Response Shapes job checks the SDK against the live API and found two documented
+  parameters the SDK did not accept: the q substring search on /data/available-symbols (docs:
+  "searches ticker and company name") and the limit on /simulation/jobs (docs promise
+  jobs/total/returned paging). Both routes already support them; the SDK just never passed them
+  through.
+
+Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
+
+
 ## v0.7.0-dev.2 (2026-09-09)
 
 ### Documentation
