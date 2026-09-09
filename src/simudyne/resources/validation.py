@@ -32,11 +32,18 @@ validation tier; on older API deployments they reach the demo tier only.
 """
 
 import base64
+import json
 import time
+from pathlib import Path
 
 
 RUN_PATH = "/validation/run"
+UPLOAD_PATH = "/validation/run/upload"
 JOBS_PATH = "/validation/jobs"
+
+#: The API rejects more per job; checked client-side so a 26-file submission
+#: fails before any bytes are uploaded.
+MAX_SIM_FILES = 25
 
 #: Flags the API resolves from the caller's tier when left unset.
 _TRI_STATE_FLAGS = (
@@ -49,6 +56,35 @@ _TRI_STATE_FLAGS = (
 #: SDK name -> API config field. The API kept ``run_fid`` for compatibility;
 #: the SDK spells out what it actually gates.
 _INCEPTION_WIRE_FIELD = "run_fid"
+
+
+def _build_config(
+    run_metrics,
+    run_impact,
+    run_inception_distances,
+    run_stylised_facts,
+    plot_data,
+    n_levels,
+    l2_only,
+) -> dict:
+    """The validation config object as the API expects it.
+
+    Tri-state flags left as None are omitted rather than sent as null: the API
+    reads absence as "use my tier's default", and an explicit null would not
+    do that.
+    """
+    config = {
+        "n_levels": n_levels,
+        "l2_only": l2_only,
+        _INCEPTION_WIRE_FIELD: run_inception_distances,
+    }
+    for flag, value in zip(
+        _TRI_STATE_FLAGS,
+        (run_metrics, run_impact, run_stylised_facts, plot_data),
+    ):
+        if value is not None:
+            config[flag] = value
+    return config
 
 
 class ValidationResource:
@@ -87,8 +123,11 @@ class ValidationResource:
             ticksize: Tick size for the symbol
             run_metrics: Compute L1/Wasserstein distributional distances
                 (None = tier default)
-            run_impact: Compute impact response curves (None = tier default).
-                Only computed when plot_data is on — it has no verdict-only form.
+            run_impact: Compute Bouchaud impact response curves for each
+                simulated run (None = tier default). Runs on every tier as of
+                pulse 2.17.0 / pulse-api-pod 1.62.0; the historical curve is
+                additionally included on demo (plot_data) jobs. Older API
+                deployments only compute it when plot_data is on.
             run_inception_distances: Compute MIND *and* FID on DeepLOB
                 embeddings (default True). One flag gates both — they share a
                 single embedding pass. Sent as the API's ``run_fid`` field.
@@ -113,19 +152,10 @@ class ValidationResource:
         Returns:
             dict with job_id, status, message
         """
-        config = {
-            "n_levels": n_levels,
-            "l2_only": l2_only,
-            _INCEPTION_WIRE_FIELD: run_inception_distances,
-        }
-        for flag, value in zip(
-            _TRI_STATE_FLAGS,
-            (run_metrics, run_impact, run_stylised_facts, plot_data),
-        ):
-            # Omitted rather than sent as None: the API reads absence as "use my
-            # tier's default", and sending an explicit null would not do that.
-            if value is not None:
-                config[flag] = value
+        config = _build_config(
+            run_metrics, run_impact, run_inception_distances,
+            run_stylised_facts, plot_data, n_levels, l2_only,
+        )
 
         payload = {
             "symbol": symbol,
@@ -140,6 +170,85 @@ class ValidationResource:
             payload["exchange"] = exchange
 
         return self._client._request("POST", RUN_PATH, json=payload)
+
+    def run_upload(
+        self,
+        symbol: str,
+        date: str,
+        provider: str,
+        exchange: str,
+        sim_files: list,
+        ticksize: float = 1.0,
+        run_metrics: bool = None,
+        run_impact: bool = None,
+        run_inception_distances: bool = True,
+        run_stylised_facts: bool = None,
+        plot_data: bool = None,
+        n_levels: int = 10,
+        l2_only: bool = False,
+    ) -> dict:
+        """Submit a validation job from simulation files you hold yourself.
+
+        Same scoring as run(), for output that is not stored in Pulse —
+        parquets from your own systems, a local engine build, or a different
+        generator entirely. The historical side is still fetched server-side,
+        so only the simulated frames are uploaded.
+
+        Args:
+            symbol: Trading symbol (e.g. "700.HK")
+            date: Calibration date in YYYY-MM-DD format
+            provider: Data provider (e.g. "omd"). Required — with no sim_ids
+                to parse it from, it is the only way to identify the
+                historical day.
+            exchange: Exchange protocol (e.g. "hkex_securities"). Required,
+                same reason.
+            sim_files: 1-25 simulated frames, each either a path to a parquet
+                file or a ``(filename, bytes)`` pair for frames already in
+                memory.
+            ticksize: Tick size for the symbol.
+
+        The run flags mean exactly what they mean on run().
+
+        Returns:
+            dict with job_id, status, message
+
+        Raises:
+            ValueError: before any request, if sim_files is empty or has more
+                than 25 entries.
+        """
+        if not sim_files:
+            raise ValueError("sim_files is empty — supply 1 to 25 files")
+        if len(sim_files) > MAX_SIM_FILES:
+            raise ValueError(
+                f"{len(sim_files)} sim_files — the API accepts at most "
+                f"{MAX_SIM_FILES} per validation job"
+            )
+
+        config = _build_config(
+            run_metrics, run_impact, run_inception_distances,
+            run_stylised_facts, plot_data, n_levels, l2_only,
+        )
+
+        files = []
+        for entry in sim_files:
+            if isinstance(entry, tuple):
+                filename, content = entry
+            else:
+                path = Path(entry)
+                filename, content = path.name, path.read_bytes()
+            files.append(
+                ("sim_files", (filename, content, "application/octet-stream"))
+            )
+
+        data = {
+            "symbol": symbol,
+            "date": date,
+            "provider": provider,
+            "exchange": exchange,
+            "ticksize": str(ticksize),
+            "config": json.dumps(config),
+        }
+        return self._client._request("POST", UPLOAD_PATH, files=files, data=data)
 
     def get_job(self, job_id: str) -> dict:
         """Get validation job status and results.
@@ -160,8 +269,15 @@ class ValidationResource:
               ordering and tier rule. Since pulse-check 1.8.0 this is the
               embedding-space FID — not comparable with values stored by older
               jobs
-            - distributions / impact_response / stylised_facts: the full
-              historical-derived payloads. Demo tier, plot_data jobs only
+            - impact_response: Bouchaud response curves — lags and events are
+              the axes, and simulated holds one {ys, ci_low, ci_high} block
+              per run, indexed [event][lag]. Every tier (pulse-api-pod >=
+              1.62.0); the historical block appears on demo plot_data jobs only
+            - impact_response_error: set when the impact pass was requested
+              but failed, so a null impact_response can be told apart from one
+              never asked for
+            - distributions / stylised_facts: the full historical-derived
+              payloads. Demo tier, plot_data jobs only
             - plots: {distributions: [...], distances: [...],
               impact_response: [...]} of {name, content_base64}
             - metadata: dict with run parameters

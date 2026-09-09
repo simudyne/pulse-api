@@ -36,6 +36,8 @@ class PulseABM:
         from simudyne.resources.profile import ProfileResource
         from simudyne.resources.api_keys import ApiKeysResource
         from simudyne.resources.data import DataResource
+        from simudyne.resources.fix import FixResource
+        from simudyne.resources.fm import FmResource
         from simudyne.resources.simulation import SimulationResource
         from simudyne.resources.simulator_gym import SimulatorGymResource
         from simudyne.resources.validation import ValidationResource
@@ -43,6 +45,8 @@ class PulseABM:
         self.profile = ProfileResource(self)
         self.api_keys = ApiKeysResource(self)
         self.data = DataResource(self)
+        self.fix = FixResource(self)
+        self.fm = FmResource(self)
         self.simulation = SimulationResource(self)
         self.simulator_gym = SimulatorGymResource(self)
         self.validation = ValidationResource(self)

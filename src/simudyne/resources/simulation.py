@@ -21,6 +21,7 @@ RESULTS_PATH = "/simulation/results"
 CACHED_PATH = "/simulation/cached"
 SAMPLE_PATH = "/simulation/sample"
 CALIBRATE_PATH = "/calibrate"
+LRM_PATH = "/simulation/lrm/run"
 
 # Available market scenarios
 SCENARIOS = {
@@ -436,6 +437,83 @@ class SimulationResource:
             ...         print(f"{sim['sim_id']}: {sim['metrics']}")
         """
         return self._pro_request("GET", f"{JOBS_PATH}/{job_id}/results")
+
+    def get_job_logs(self, job_id: str) -> str:
+        """Fetch the engine run log for one of your jobs, as plain text.
+
+        The worker writes a diagnostic log per job — this is the thing to read
+        when a run fails or finishes with nothing plottable, and the thing to
+        attach when sending a problem to support@simudyne.com.
+
+        Args:
+            job_id: The job ID from run() or get_jobs()
+
+        Returns:
+            str: The log text.
+
+        Raises:
+            PulseAPIError: 404 when the job does not exist, is not yours, or
+                wrote no log.
+
+        Example:
+            >>> status = client.simulation.get_job_status(job_id)
+            >>> if status["has_errors"]:
+            ...     print(client.simulation.get_job_logs(job_id)[:2000])
+        """
+        # Plain text, not JSON — go through the retrying transport directly.
+        url = f"{self._client.base_url}{JOBS_PATH}/{job_id}/logs"
+        response = self._client._request_with_retries("GET", url)
+        return response.text
+
+    def run_lrm(
+        self,
+        symbol: str,
+        cal_date: str,
+        provider: str,
+        exchange: str,
+        order_sizes: list,
+        n_runs: int = 50,
+        seed: int = 42,
+        horizon_mins: int = 60,
+        strategy: str = "vwap",
+        side: str = None,
+    ):
+        """Run a liquidity-risk grid: market impact across a ladder of order sizes.
+
+        One execution algo is built per entry in order_sizes, and all of them
+        share a single baseline, so the cost is ``n_runs * (1 + len(order_sizes))``
+        simulations rather than one baseline per size. Poll the returned job_id
+        through the usual job endpoints.
+
+        Args:
+            symbol: Trading symbol (e.g. "700")
+            cal_date: Calibration date in YYYY-MM-DD format
+            provider: Data provider (e.g. "omd", "bmll")
+            exchange: Exchange protocol (e.g. "hkex_securities")
+            order_sizes: Order sizes in LOTS — one algo per entry
+            n_runs: Monte Carlo runs per arm (default 50)
+            seed: Random seed (default 42)
+            horizon_mins: Execution horizon in minutes (default 60)
+            strategy: "vwap" or "twap" (default "vwap")
+            side: "buy" or "sell"; defaults to the sign of each order size
+
+        Returns:
+            dict with job_id and the queued sim_ids
+        """
+        payload = {
+            "symbol": symbol,
+            "cal_date": cal_date,
+            "provider": provider,
+            "exchange": exchange,
+            "order_sizes": order_sizes,
+            "n_runs": n_runs,
+            "seed": seed,
+            "horizon_mins": horizon_mins,
+            "strategy": strategy,
+        }
+        if side is not None:
+            payload["side"] = side
+        return self._pro_request("POST", LRM_PATH, json=payload)
 
     def list_sim_files(self, sim_id: str):
         """
